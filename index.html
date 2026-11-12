@@ -657,7 +657,8 @@ function createRoom() {
     document.getElementById('roomBox').classList.remove('hidden');
     state.isHost = true;
     setStatus('Кімната відкрита. Чекаємо гравця 2...', 'warn');
-    appendChat('SYSTEM', 'Кімната створена. Код: ' + code, 'sys');
+    appendChat('SYSTEM', 'Кімната створена. Код: ' + code + '. Передай його другу.', 'sys');
+    appendChat('SYSTEM', 'Ти P1 (хост). Ти керуєш меню FIFA 97: Friendly → 2 Player. На екрані вибору команд друг (P2) обере свою на WASD+JKL.', 'sys');
   });
   state.peer.on('connection', (conn) => {
     if (state.conn) { conn.close(); return; }
@@ -696,8 +697,12 @@ function joinRoom() {
       // Hide local emulator canvas, show remote video element
       document.getElementById('game').classList.add('hidden');
       document.getElementById('remoteVideo').classList.remove('hidden');
+      document.getElementById('focusHint').classList.add('hide');
       showOverlay('Очікуємо відео від хоста...');
       document.getElementById('p2ctrl').classList.remove('hidden');
+      // Pause local emulator to save CPU (we're just watching host's stream)
+      try { if (window.EJS_emulator && window.EJS_emulator.pause) window.EJS_emulator.pause(); } catch(e){}
+      appendChat('SYSTEM', 'Ти P2 (клієнт). Хост керує меню. На екрані вибору команд — обери свою на WASD+JKL.', 'sys');
     });
   });
   state.peer.on('error', (err) => {
@@ -768,17 +773,22 @@ function onRemoteMsg(msg) {
 function onPeerGone() {
   if (state.isHost === null) return;
   appendChat('SYSTEM', 'Опонент вийшов', 'sys');
-  setStatus('Опонент вийшов', 'err');
+  setStatus('Опонент вийшов. Повертаємось у соло.', 'err');
   // reset to solo play if was client
   if (state.isHost === false) {
     document.getElementById('game').classList.remove('hidden');
     document.getElementById('remoteVideo').classList.add('hidden');
+    document.getElementById('remoteVideo').srcObject = null;
     document.getElementById('p2ctrl').classList.add('hidden');
+    // Resume local emulator
+    try { if (window.EJS_emulator && window.EJS_emulator.play) window.EJS_emulator.play(); } catch(e){}
     showOverlay('Граємо соло');
-    setTimeout(hideOverlay, 1500);
+    setTimeout(() => { hideOverlay(); focusGame(); }, 1200);
   }
   try { if (state.conn) state.conn.close(); } catch(e){}
+  try { if (state.pc) state.pc.close(); } catch(e){}
   state.conn = null;
+  state.pc = null;
   state.isHost = null;
   state.oppNick = '';
 }
@@ -853,6 +863,7 @@ async function handleRemoteIce(candidate) {
 }
 
 /* ---------- INPUT FORWARDING (client → host) ---------- */
+// Client presses WASD/JKL/U → send symbolic action to host
 const P2_KEY_MAP = {
   'KeyW':'up','KeyA':'left','KeyS':'down','KeyD':'right',
   'KeyJ':'a','KeyK':'b','KeyL':'c','KeyU':'start'
@@ -876,26 +887,29 @@ document.addEventListener('keyup', (e) => {
   }
 });
 
-// Host: simulate key events for EmulatorJS P2 controller.
-// Default P2 has no key bindings; host can set them in EmulatorJS settings (gear icon).
-const HOST_P2_DISPATCH = {
-  'up':'ArrowUp','down':'ArrowDown','left':'ArrowLeft','right':'ArrowRight',
-  'a':'KeyZ','b':'KeyX','c':'KeyC','start':'Enter'
+// Host: forward P2 input directly to emulator core via gameManager.simulateInput
+// (synthetic KeyboardEvent doesn't carry keyCode, so we bypass the keyboard layer)
+// Button IDs (Sega MD / Genesis Plus GX): 0=B, 2=Mode, 3=Start, 4=Up, 5=Down, 6=Left, 7=Right, 8=A, 9=C
+const P2_BUTTON_MAP = {
+  'up':    [1, 4],  // P2, DPAD_UP
+  'down':  [1, 5],  // P2, DPAD_DOWN
+  'left':  [1, 6],  // P2, DPAD_LEFT
+  'right': [1, 7],  // P2, DPAD_RIGHT
+  'a':     [1, 8],  // P2, A
+  'b':     [1, 0],  // P2, B (button 0)
+  'c':     [1, 9],  // P2, C
+  'start': [1, 3]   // P2, Start
 };
 function simulateKey(sym, down) {
-  const code = HOST_P2_DISPATCH[sym];
-  if (!code) return;
+  const map = P2_BUTTON_MAP[sym];
+  if (!map) return;
+  const [player, button] = map;
+  const value = down ? 1 : 0;
   try {
-    const ev = new KeyboardEvent(down ? 'keydown':'keyup', {
-      code: code, key: codeToKey(code),
-      bubbles: true, cancelable: true
-    });
-    document.dispatchEvent(ev);
-  } catch(e){}
-}
-function codeToKey(code) {
-  const m = {ArrowUp:'ArrowUp',ArrowDown:'ArrowDown',ArrowLeft:'ArrowLeft',ArrowRight:'ArrowRight',KeyZ:'z',KeyX:'x',KeyC:'c',Enter:'Enter'};
-  return m[code] || '';
+    if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+      window.EJS_emulator.gameManager.simulateInput(player, button, value);
+    }
+  } catch(e) { console.warn('simulateKey fail', e); }
 }
 
 /* ---------- CHAT ---------- */
