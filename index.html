@@ -358,7 +358,7 @@
   <section id="screen-home" class="screen active">
     <div class="panel">
       <h2>Оберіть <span class="y">режим</span></h2>
-      <p>Класичний FIFA Soccer 97 Gold Edition (Sega 16-біт) прямо у браузері. Грай проти комп'ютера або з другом онлайн через WebRTC.</p>
+      <p>Класичний FIFA Soccer 97 (Sega Mega Drive) прямо у браузері — без встановлення, без реєстрації, без завантажень. ROM підтягується автоматично. Грай проти комп'ютера або з другом онлайн через WebRTC.</p>
 
       <div class="mode-grid">
         <div class="mode-card" onclick="goOnline()">
@@ -458,29 +458,31 @@
       <h2>Завантаження <span class="y">ROM</span></h2>
       <p id="romIntro">Підтримуються файли <b>.bin / .smd / .gen / .md</b> (Sega Mega Drive). ROM не входить у дистрибутив через авторські права — його потрібно мати локально.</p>
 
-      <label class="rom-drop" id="romDrop" for="romFile">
-        <div>📁 Перетягніть ROM-файл сюди або натисніть для вибору</div>
-        <input type="file" id="romFile" accept=".bin,.smd,.gen,.md,.zip">
-        <div class="rom-name" id="romName"></div>
-      </label>
-
-      <div id="romStatus" class="status-line hidden">
+      <div class="status-line" style="border-color:var(--neon)">
         <span class="dot"></span>
-        <span></span>
+        <span>ROM підтягується автоматично з archive.org під час старту матчу (~2 МБ).</span>
       </div>
 
+      <details style="margin-top:14px">
+        <summary style="cursor:pointer;color:var(--muted);font-size:12px;letter-spacing:1px;text-transform:uppercase">Маю свій ROM — завантажити локально</summary>
+        <label class="rom-drop" id="romDrop" for="romFile" style="margin-top:10px">
+          <div>📁 Перетягніть .bin / .smd / .gen / .md сюди</div>
+          <input type="file" id="romFile" accept=".bin,.smd,.gen,.md,.zip">
+          <div class="rom-name" id="romName"></div>
+        </label>
+      </details>
+
       <div class="btn-row">
-        <button class="btn" id="romContinue" disabled onclick="afterRom()">Далі →</button>
         <button class="btn red" onclick="goHome()">Скасувати</button>
       </div>
     </div>
   </section>
 
-  <!-- WAITING FOR HOST'S ROM (client) -->
+  <!-- WAITING FOR HOST'S START (client) -->
   <section id="screen-rom-wait" class="screen">
     <div class="panel">
-      <h2>Очікуємо <span class="y">ROM</span> від хоста</h2>
-      <p>Хост завантажує гру. Коли він запустить матч, ви побачите відео і зможете керувати командою 2.</p>
+      <h2>Очікуємо <span class="y">хоста</span></h2>
+      <p>Хост зараз обирає команду і стартує матч. Коли він запустить гру, ви побачите відео і зможете керувати командою 2.</p>
       <div class="status-line">
         <span class="dot"></span>
         <span>Чекаємо запуску...</span>
@@ -518,6 +520,15 @@
         <button class="btn" id="startGameBtn" disabled onclick="startGame()">Старт матчу →</button>
         <button class="btn red" onclick="leaveSession()">Покинути</button>
       </div>
+
+      <details style="margin-top:14px">
+        <summary style="cursor:pointer;color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase">Маю свій ROM — використати замість автоматичного</summary>
+        <label class="rom-drop" id="romDropTeam" for="romFileTeam" style="margin-top:10px">
+          <div>📁 Перетягніть .bin / .smd / .gen / .md сюди</div>
+          <input type="file" id="romFileTeam" accept=".bin,.smd,.gen,.md,.zip">
+          <div class="rom-name" id="romNameTeam"></div>
+        </label>
+      </details>
 
       <div id="teamsStatus" class="status-line hidden">
         <span class="dot"></span>
@@ -592,6 +603,9 @@
    FIFA 97 GOLD ONLINE — single-file app
    ======================================================================== */
 
+/* ---------- DEFAULT ROM (auto-loaded, no install) ---------- */
+const DEFAULT_ROM_URL = 'https://archive.org/download/FIFA_Soccer_97_USA_Europe_EnFrDeEsItSv.md/FIFA_Soccer_97_USA_Europe_EnFrDeEsItSv.md';
+
 /* ---------- TEAMS ---------- */
 const TEAMS = [
   {n:"Argentina",      f:"🇦🇷"},{n:"Brazil",          f:"🇧🇷"},
@@ -654,9 +668,8 @@ function goCPU() {
   state.mode = 'cpu';
   state.isHost = true;
   state.oppNick = 'CPU';
-  document.getElementById('romIntro').innerHTML = 'Підтримуються файли <b>.bin / .smd / .gen / .md</b> (Sega Mega Drive). ROM не входить у дистрибутив через авторські права — його потрібно мати локально.';
-  showScreen('screen-rom');
-  setupRomDrop();
+  // skip ROM screen — auto-load from archive.org on game start
+  enterTeamSelect();
 }
 
 /* ---------- STATUS HELPERS ---------- */
@@ -791,15 +804,20 @@ function onRemoteMsg(msg) {
   switch (msg.t) {
     case 'hello':
       state.oppNick = msg.nick || 'Player2';
-      // host receives join → reply with hello + nick
+      appendChat('SYSTEM', state.oppNick + ' приєднався до кімнати', 'sys');
       if (state.isHost) {
         sendMsg({ t: 'hello', nick: state.nick });
-        // proceed to ROM upload for host
-        showScreen('screen-rom');
-        setupRomDrop();
+        // skip ROM screen — go straight to team select
+        enterTeamSelect();
       } else {
-        // client got host's hello → go to ROM-wait screen
+        // client got host's hello → wait for host's teamselect signal
         showScreen('screen-rom-wait');
+      }
+      break;
+    case 'teamselect':
+      // host signals client to move to team-select screen
+      if (!state.isHost) {
+        enterTeamSelect();
       }
       break;
     case 'team':
@@ -807,6 +825,8 @@ function onRemoteMsg(msg) {
       state.oppReady = !!msg.ready;
       renderSlots();
       maybeEnableStart();
+      // if host receives team from client, ensure we are also on team screen
+      if (state.isHost && !document.getElementById('screen-teams').classList.contains('active')) enterTeamSelect();
       break;
     case 'ready':
       state.oppReady = true;
@@ -818,6 +838,7 @@ function onRemoteMsg(msg) {
       showScreen('screen-game');
       showGameOverlay('Очікуємо відео від хоста...');
       document.getElementById('p2ControlsBlock').classList.remove('hidden');
+      fillGamePanel();
       break;
     case 'webrtc-offer':
       handleOffer(msg);
@@ -850,51 +871,49 @@ function onPeerGone() {
   }
 }
 
-/* ---------- ROM UPLOAD ---------- */
+/* ---------- ROM UPLOAD (optional fallback) ---------- */
 function setupRomDrop() {
-  const drop = document.getElementById('romDrop');
-  const input = document.getElementById('romFile');
-  const name = document.getElementById('romName');
-  if (!drop) return;
-  if (input._bound) return;
-  input._bound = true;
-  input.addEventListener('change', () => {
-    if (input.files && input.files[0]) handleRomFile(input.files[0]);
-  });
-  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, (e) => {
-    e.preventDefault(); drop.classList.add('over');
-  }));
-  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, (e) => {
-    e.preventDefault(); drop.classList.remove('over');
-  }));
-  drop.addEventListener('drop', (e) => {
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleRomFile(e.dataTransfer.files[0]);
+  document.querySelectorAll('label.rom-drop').forEach((drop) => {
+    if (drop._bound) return;
+    drop._bound = true;
+    const input = drop.querySelector('input[type=file]');
+    const name  = drop.querySelector('.rom-name');
+    if (!input) return;
+    const onFile = (file) => {
+      if (!file) return;
+      const ok = /\.(bin|smd|gen|md|zip)$/i.test(file.name);
+      if (!ok) {
+        if (name) name.textContent = '✗ Невірний формат. Очікуємо .bin/.smd/.gen/.md/.zip';
+        return;
+      }
+      state.romBlob = file;
+      state.romName = file.name;
+      if (name) name.textContent = '✓ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+    };
+    input.addEventListener('change', () => onFile(input.files && input.files[0]));
+    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, (e) => {
+      e.preventDefault(); drop.classList.add('over');
+    }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, (e) => {
+      e.preventDefault(); drop.classList.remove('over');
+    }));
+    drop.addEventListener('drop', (e) => onFile(e.dataTransfer.files && e.dataTransfer.files[0]));
   });
 }
 
-function handleRomFile(file) {
-  const ok = /\.(bin|smd|gen|md|zip)$/i.test(file.name);
-  if (!ok) {
-    setStatus('romStatus', 'Невірний формат. Очікуємо .bin/.smd/.gen/.md/.zip', 'err');
-    return;
-  }
-  state.romBlob = file;
-  state.romName = file.name;
-  document.getElementById('romName').textContent = '✓ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
-  setStatus('romStatus', 'ROM завантажено. Натисніть «Далі».', '');
-  document.getElementById('romContinue').disabled = false;
-}
-
-function afterRom() {
-  // both modes: go to team select
-  // For online host: notify client that we proceed to team select
-  if (state.mode === 'online' && state.isHost) {
-    sendMsg({ t: 'start' }); // signal client to enter game-stage wait (we'll do team select first; client will see overlay)
-    // Actually we want client to also reach team-select, but client has no ROM. Show client "team select" too.
-  }
+function enterTeamSelect() {
+  // Called after lobby (both CPU and online)
   showScreen('screen-teams');
   renderTeams();
   renderSlots();
+  if (state.mode === 'online' && state.isHost) {
+    sendMsg({ t: 'teamselect' });
+  }
+}
+
+function afterRom() {
+  // Used by manual ROM upload fallback inside team-select details
+  enterTeamSelect();
 }
 
 /* ---------- TEAM SELECT ---------- */
@@ -980,16 +999,19 @@ function maybeEnableStart() {
 function startGame() {
   if (state.mode === 'cpu') {
     showScreen('screen-game');
+    showGameOverlay('Завантаження гри (~2 МБ)...');
     launchEmulator();
   } else {
-    // host launches emulator, then sets up WebRTC media stream
     showScreen('screen-game');
+    showGameOverlay('Завантаження гри (~2 МБ)...');
     launchEmulator();
     sendMsg({ t: 'start' });
-    // client will switch to screen-game; once host's emulator canvas is ready, we captureStream and negotiate
     document.getElementById('p2ControlsBlock').classList.add('hidden');
   }
-  // fill game side panel
+  fillGamePanel();
+}
+
+function fillGamePanel() {
   document.getElementById('gp1Name').textContent = state.nick;
   document.getElementById('gp2Name').textContent = state.oppNick;
   document.getElementById('gp1Team').textContent = state.myTeam || '—';
@@ -1001,13 +1023,15 @@ let emulatorStarted = false;
 function launchEmulator() {
   if (emulatorStarted) return;
   emulatorStarted = true;
-  const romUrl = URL.createObjectURL(state.romBlob);
+  // Use uploaded ROM if present, otherwise auto-load from archive.org
+  const romUrl = state.romBlob ? URL.createObjectURL(state.romBlob) : DEFAULT_ROM_URL;
 
   // Configure EmulatorJS
   window.EJS_player        = '#game';
   window.EJS_core          = 'segaMD';
   window.EJS_gameUrl       = romUrl;
-  window.EJS_gameName      = 'FIFA 97 Gold';
+  window.EJS_gameName      = 'FIFA 97';
+  window.EJS_gameID        = 'fifa97gold';
   window.EJS_pathtodata    = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@latest/data/';
   window.EJS_startOnLoaded = true;
   window.EJS_color         = '#00ff7f';
@@ -1023,11 +1047,15 @@ function launchEmulator() {
     // wait for the emulator canvas to appear
     waitForCanvas().then(() => {
       state.emulatorReady = true;
+      hideGameOverlay();
       if (state.mode === 'online' && state.isHost) {
         // start WebRTC negotiation: send offer
         startMediaNegotiation();
       }
-    }).catch(err => console.warn('canvas wait failed', err));
+    }).catch(err => {
+      console.warn('canvas wait failed', err);
+      showGameOverlay('Не вдалося завантажити ROM з archive.org. Можна завантажити свій файл через «Маю свій ROM» у виборі команд.');
+    });
   };
   script.onerror = () => {
     showGameOverlay('Не вдалося завантажити емулятор (EmulatorJS CDN). Перевірте інтернет.');
@@ -1239,9 +1267,8 @@ function cleanupSession() {
   document.getElementById('nickOnline').value = '';
   document.getElementById('joinCode').value = '';
   document.getElementById('roomCode').textContent = '------';
-  document.getElementById('romName').textContent = '';
-  document.getElementById('romContinue').disabled = true;
-  hideStatus('onlineStatus'); hideStatus('waitStatus'); hideStatus('romStatus'); hideStatus('teamsStatus');
+  document.querySelectorAll('.rom-name').forEach(e => e.textContent = '');
+  hideStatus('onlineStatus'); hideStatus('waitStatus'); hideStatus('teamsStatus');
   document.getElementById('chatLog').innerHTML = '';
   document.getElementById('p2ControlsBlock').classList.add('hidden');
   document.getElementById('remoteVideo').classList.add('hidden');
@@ -1255,6 +1282,7 @@ function cleanupSession() {
 }
 
 /* ---------- INIT ---------- */
+setupRomDrop();
 appendChat('SYSTEM', 'Сторінка готова. Оберіть режим.', 'sys');
 </script>
 </body>
