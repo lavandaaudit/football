@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIFA 97 GOLD — ONLINE</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0a;
+    --bg-panel: #111314;
+    --neon: #00ff7f;
+    --neon-dim: #007a3d;
+    --yellow: #ffd000;
+    --red: #ff3b3b;
+    --text: #d8ffe6;
+    --muted: #5a7a68;
+    --border: #1d2622;
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', 'Consolas', monospace;
+    min-height: 100vh;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(0,255,127,0.05), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(255,208,0,0.04), transparent 40%);
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: rgba(8,10,9,0.85);
+    backdrop-filter: blur(4px);
+    position: sticky; top: 0; z-index: 10;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--neon);
+    text-shadow: 0 0 8px rgba(0,255,127,0.45);
+    text-transform: uppercase;
+  }
+  header h1 .gold { color: var(--yellow); text-shadow: 0 0 8px rgba(255,208,0,0.4); }
+  header .sub { color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+  .screen { display: none; }
+  .screen.active { display: block; animation: fade 0.25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin: 0 auto;
+    max-width: 720px;
+  }
+  .panel h2 {
+    color: var(--neon);
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .panel h2 .y { color: var(--yellow); }
+  .panel p { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+  input[type=text] {
+    width: 100%;
+    background: #050805;
+    border: 1px solid var(--border);
+    color: var(--neon);
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 15px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input[type=text]:focus {
+    border-color: var(--neon);
+    box-shadow: 0 0 0 2px rgba(0,255,127,0.15);
+  }
+  .input-code { text-align: center; letter-spacing: 4px; font-size: 22px; text-transform: uppercase; }
+
+  .btn {
+    background: transparent;
+    color: var(--neon);
+    border: 1px solid var(--neon);
+    padding: 12px 22px;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+    font-weight: 700;
+  }
+  .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 12px rgba(0,255,127,0.5); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.yellow { color: var(--yellow); border-color: var(--yellow); }
+  .btn.yellow:hover { background: var(--yellow); color: #000; box-shadow: 0 0 12px rgba(255,208,0,0.5); }
+  .btn.red { color: var(--red); border-color: var(--red); }
+  .btn.red:hover { background: var(--red); color: #000; }
+  .btn.big { padding: 16px 30px; font-size: 15px; }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+  .btn-row.center { justify-content: center; }
+
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
+  @media (max-width: 640px) { .mode-grid { grid-template-columns: 1fr; } }
+  .mode-card {
+    background: #0a0c0b;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .mode-card:hover { border-color: var(--neon); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,255,127,0.1); }
+  .mode-card .icon { font-size: 36px; color: var(--neon); margin-bottom: 12px; }
+  .mode-card .icon.y { color: var(--yellow); }
+  .mode-card h3 { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; color: var(--text); }
+  .mode-card small { color: var(--muted); font-size: 11px; letter-spacing: 0.5px; }
+
+  .status-line {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 12px;
+    padding: 10px 14px;
+    background: #050805;
+    border-left: 2px solid var(--neon);
+    border-radius: 2px;
+    margin-top: 14px;
+  }
+  .status-line .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--neon); animation: pulse 1.4s infinite;
+  }
+  .status-line.warn { border-color: var(--yellow); }
+  .status-line.warn .dot { background: var(--yellow); }
+  .status-line.err  { border-color: var(--red); }
+  .status-line.err  .dot { background: var(--red); animation: none; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .code-box {
+    text-align: center;
+    padding: 22px;
+    background: #050805;
+    border: 1px dashed var(--neon);
+    border-radius: 6px;
+    margin: 18px 0;
+  }
+  .code-box .lbl { color: var(--muted); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+  .code-box .code {
+    color: var(--yellow);
+    font-size: 42px;
+    letter-spacing: 10px;
+    font-weight: 700;
+    margin-top: 8px;
+    text-shadow: 0 0 14px rgba(255,208,0,0.4);
+    user-select: all;
+  }
+  .code-box small { color: var(--muted); display: block; margin-top: 8px; }
+
+  .rom-drop {
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 28px;
+    text-align: center;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin: 14px 0;
+  }
+  .rom-drop:hover, .rom-drop.over { border-color: var(--neon); color: var(--neon); background: rgba(0,255,127,0.05); }
+  .rom-drop input { display: none; }
+  .rom-name { color: var(--yellow); font-size: 13px; margin-top: 8px; word-break: break-all; }
+
+  /* Team select */
+  .teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+  .team-card {
+    background: #0a0c0b;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.14s;
+    position: relative;
+  }
+  .team-card:hover { border-color: var(--neon); transform: translateY(-1px); }
+  .team-card.selected-p1 { border-color: var(--neon); background: rgba(0,255,127,0.1); box-shadow: 0 0 10px rgba(0,255,127,0.2); }
+  .team-card.selected-p2 { border-color: var(--yellow); background: rgba(255,208,0,0.08); box-shadow: 0 0 10px rgba(255,208,0,0.2); }
+  .team-card.selected-p1.selected-p2 { border-color: #ff7f00; background: rgba(255,127,0,0.1); }
+  .team-card .flag { font-size: 22px; line-height: 1; }
+  .team-card .name { font-size: 11px; color: var(--text); margin-top: 6px; letter-spacing: 0.5px; }
+  .team-card .tag {
+    position: absolute; top: 4px; right: 4px;
+    font-size: 9px; padding: 1px 5px; border-radius: 2px;
+    background: var(--neon); color: #000; font-weight: 700;
+  }
+  .team-card .tag.p2 { background: var(--yellow); right: 4px; left: auto; }
+  .team-card .tag.p2.l { left: 4px; right: auto; }
+
+  .slots {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin-bottom: 14px;
+  }
+  .slot {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+    text-align: center;
+  }
+  .slot.p1 { border-color: var(--neon-dim); }
+  .slot.p2 { border-color: #6b5a00; }
+  .slot .who { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .slot .who b { color: var(--neon); }
+  .slot.p2 .who b { color: var(--yellow); }
+  .slot .pick { font-size: 16px; margin-top: 8px; min-height: 22px; color: var(--text); }
+  .slot .ready { font-size: 10px; margin-top: 6px; color: var(--muted); }
+  .slot .ready.ok { color: var(--neon); }
+  .slot.p2 .ready.ok { color: var(--yellow); }
+
+  /* Game screen */
+  #screen-game { display: none; }
+  #screen-game.active { display: grid; }
+  #screen-game {
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { #screen-game.active { grid-template-columns: 1fr; } }
+  .game-stage {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    min-height: 400px;
+  }
+  #game {
+    width: 100%;
+    background: #000;
+    aspect-ratio: 4/3;
+    max-height: 78vh;
+  }
+  #game canvas { width: 100% !important; height: 100% !important; display: block; }
+  #remoteVideo {
+    width: 100%;
+    background: #000;
+    aspect-ratio: 4/3;
+    display: block;
+    object-fit: contain;
+  }
+  .game-stage .overlay-msg {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 13px; text-align: center;
+    padding: 20px;
+    background: rgba(0,0,0,0.6);
+  }
+
+  .side-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .side-panel h3 { font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+  .players-box .pl { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
+  .players-box .pl:last-child { border-bottom: none; }
+  .players-box .pl .nm { color: var(--text); }
+  .players-box .pl.p1 .nm { color: var(--neon); }
+  .players-box .pl.p2 .nm { color: var(--yellow); }
+  .players-box .pl .tm { color: var(--muted); font-size: 11px; }
+
+  .chat-box {
+    display: flex; flex-direction: column;
+    height: 200px;
+  }
+  .chat-log {
+    flex: 1;
+    overflow-y: auto;
+    background: #050805;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .chat-log .msg { margin-bottom: 4px; word-wrap: break-word; }
+  .chat-log .msg .who { color: var(--neon); }
+  .chat-log .msg .who.p2 { color: var(--yellow); }
+  .chat-log .msg .who.sys { color: var(--muted); font-style: italic; }
+  .chat-log .msg .txt { color: var(--text); }
+  .chat-input-row { display: flex; gap: 6px; }
+  .chat-input-row input { flex: 1; }
+
+  .controls-help { font-size: 11px; color: var(--muted); line-height: 1.7; }
+  .controls-help .k { display: inline-block; padding: 1px 6px; background: #050805; border: 1px solid var(--border); border-radius: 2px; color: var(--neon); margin-right: 4px; min-width: 14px; text-align: center; }
+  .controls-help .k.y { color: var(--yellow); }
+
+  .top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 30px 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+    letter-spacing: 0.5px;
+  }
+  footer a { color: var(--neon-dim); text-decoration: none; }
+  footer a:hover { color: var(--neon); }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FIFA <span class="gold">97</span> GOLD — ONLINE</h1>
+  <span class="sub">SEGA MEGA DRIVE · NETPLAY · v1.0</span>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <section id="screen-home" class="screen active">
+    <div class="panel">
+      <h2>Оберіть <span class="y">режим</span></h2>
+      <p>Класичний FIFA Soccer 97 Gold Edition (Sega 16-біт) прямо у браузері. Грай проти комп'ютера або з другом онлайн через WebRTC.</p>
+
+      <div class="mode-grid">
+        <div class="mode-card" onclick="goOnline()">
+          <div class="icon">⌨</div>
+          <h3>Онлайн 1×1</h3>
+          <small>Створи кімнату · друг введе код · граєте синхронно</small>
+        </div>
+        <div class="mode-card" onclick="goCPU()">
+          <div class="icon y">★</div>
+          <h3>Проти комп'ютера</h3>
+          <small>Одиночна гра · швидкий старт</small>
+        </div>
+      </div>
+
+      <div class="status-line">
+        <span class="dot"></span>
+        <span id="netStatus">Перевірка мережі...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ONLINE: setup -->
+  <section id="screen-online" class="screen">
+    <div class="panel">
+      <h2>Онлайн <span class="y">1×1</span></h2>
+      <p>Введіть нікнейм. Створіть кімнату — отримаєте 6-значний код. Передайте його другу. Він введе код у поле «Приєднатись».</p>
+
+      <label>Ваш нікнейм</label>
+      <input type="text" id="nickOnline" maxlength="16" placeholder="напр. Ronaldo9" value="">
+
+      <div class="btn-row center">
+        <button class="btn big" onclick="createRoom()">Створити кімнату</button>
+      </div>
+
+      <div style="height:18px"></div>
+
+      <label>Код кімнати друга</label>
+      <input type="text" id="joinCode" class="input-code" maxlength="6" placeholder="______">
+
+      <div class="btn-row center">
+        <button class="btn yellow big" onclick="joinRoom()">Приєднатись</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="goHome()">← Назад</button>
+      </div>
+
+      <div id="onlineStatus" class="status-line hidden">
+        <span class="dot"></span>
+        <span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAITING (host) -->
+  <section id="screen-wait" class="screen">
+    <div class="panel">
+      <h2>Очікуємо <span class="y">гравця 2</span></h2>
+      <p>Передайте цей код другу. Кімната відкрита.</p>
+
+      <div class="code-box">
+        <div class="lbl">КОД КІМНАТИ</div>
+        <div class="code" id="roomCode">------</div>
+        <small id="roomHint">Натисніть на код, щоб скопіювати</small>
+      </div>
+
+      <div class="btn-row center">
+        <button class="btn" onclick="copyCode()">Скопіювати код</button>
+        <button class="btn red" onclick="cancelWait()">Скасувати</button>
+      </div>
+
+      <div id="waitStatus" class="status-line">
+        <span class="dot"></span>
+        <span>Чекаємо підключення...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONNECTING (client) -->
+  <section id="screen-connect" class="screen">
+    <div class="panel">
+      <h2>Підключення...</h2>
+      <p>З'єднання з кімнатою <span id="connectingCode" style="color:var(--yellow)">------</span></p>
+      <div class="status-line warn">
+        <span class="dot"></span>
+        <span>Встановлюємо P2P-з'єднання...</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn red" onclick="cancelConnect()">Скасувати</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROM UPLOAD -->
+  <section id="screen-rom" class="screen">
+    <div class="panel">
+      <h2>Завантаження <span class="y">ROM</span></h2>
+      <p id="romIntro">Підтримуються файли <b>.bin / .smd / .gen / .md</b> (Sega Mega Drive). ROM не входить у дистрибутив через авторські права — його потрібно мати локально.</p>
+
+      <label class="rom-drop" id="romDrop" for="romFile">
+        <div>📁 Перетягніть ROM-файл сюди або натисніть для вибору</div>
+        <input type="file" id="romFile" accept=".bin,.smd,.gen,.md,.zip">
+        <div class="rom-name" id="romName"></div>
+      </label>
+
+      <div id="romStatus" class="status-line hidden">
+        <span class="dot"></span>
+        <span></span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="romContinue" disabled onclick="afterRom()">Далі →</button>
+        <button class="btn red" onclick="goHome()">Скасувати</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAITING FOR HOST'S ROM (client) -->
+  <section id="screen-rom-wait" class="screen">
+    <div class="panel">
+      <h2>Очікуємо <span class="y">ROM</span> від хоста</h2>
+      <p>Хост завантажує гру. Коли він запустить матч, ви побачите відео і зможете керувати командою 2.</p>
+      <div class="status-line">
+        <span class="dot"></span>
+        <span>Чекаємо запуску...</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn red" onclick="leaveSession()">Покинути</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM SELECT -->
+  <section id="screen-teams" class="screen">
+    <div class="panel">
+      <h2>Вибір <span class="y">команд</span></h2>
+      <p>Оберіть команди для себе і (опонента / CPU). Фактичний вибір команди у грі треба буде зробити ще й у меню FIFA 97 — це лише позначка для лобі.</p>
+
+      <div class="slots">
+        <div class="slot p1">
+          <div class="who">Гравець 1 · <b id="p1Name">—</b></div>
+          <div class="pick" id="p1Pick">— не обрано —</div>
+          <div class="ready" id="p1Ready">очікування</div>
+        </div>
+        <div class="slot p2">
+          <div class="who">Гравець 2 · <b id="p2Name">—</b></div>
+          <div class="pick" id="p2Pick">— не обрано —</div>
+          <div class="ready" id="p2Ready">очікування</div>
+        </div>
+      </div>
+
+      <label>Список команд</label>
+      <div class="teams-grid" id="teamsGrid"></div>
+
+      <div class="btn-row">
+        <button class="btn yellow" id="confirmTeamBtn" onclick="confirmTeam()">Я готовий</button>
+        <button class="btn" id="startGameBtn" disabled onclick="startGame()">Старт матчу →</button>
+        <button class="btn red" onclick="leaveSession()">Покинути</button>
+      </div>
+
+      <div id="teamsStatus" class="status-line hidden">
+        <span class="dot"></span>
+        <span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen">
+    <div class="game-stage" id="gameStage">
+      <!-- host: emulator mounts here -->
+      <div id="game"></div>
+      <!-- client: remote video -->
+      <video id="remoteVideo" autoplay muted playsinline class="hidden"></video>
+      <div class="overlay-msg hidden" id="gameOverlay"></div>
+    </div>
+
+    <div class="side-panel">
+      <div>
+        <h3>Гравці</h3>
+        <div class="players-box">
+          <div class="pl p1"><span class="nm" id="gp1Name">—</span><span class="tm" id="gp1Team">—</span></div>
+          <div class="pl p2"><span class="nm" id="gp2Name">—</span><span class="tm" id="gp2Team">—</span></div>
+        </div>
+      </div>
+
+      <div>
+        <h3>Чат</h3>
+        <div class="chat-box">
+          <div class="chat-log" id="chatLog"></div>
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" maxlength="200" placeholder="Повідомлення..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="btn" onclick="sendChat()">></button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3>Керування (P1)</h3>
+        <div class="controls-help">
+          <div><span class="k">↑</span><span class="k">↓</span><span class="k">←</span><span class="k">→</span> рух</div>
+          <div><span class="k">Z</span> A · <span class="k">X</span> B · <span class="k">C</span> C</div>
+          <div><span class="k">Enter</span> Start</div>
+        </div>
+      </div>
+
+      <div id="p2ControlsBlock" class="hidden">
+        <h3>Керування (P2) — ваші</h3>
+        <div class="controls-help">
+          <div><span class="k y">W</span><span class="k y">A</span><span class="k y">S</span><span class="k y">D</span> рух</div>
+          <div><span class="k y">J</span> A · <span class="k y">K</span> B · <span class="k y">L</span> C</div>
+          <div><span class="k y">U</span> Start</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn red" onclick="leaveSession()">Вийти з гри</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Сторінка для GitHub Pages · EmulatorJS (RetroArch) + PeerJS WebRTC · ROM не постачається
+</footer>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+/* ========================================================================
+   FIFA 97 GOLD ONLINE — single-file app
+   ======================================================================== */
+
+/* ---------- TEAMS ---------- */
+const TEAMS = [
+  {n:"Argentina",      f:"🇦🇷"},{n:"Brazil",          f:"🇧🇷"},
+  {n:"Germany",        f:"🇩🇪"},{n:"Italy",           f:"🇮🇹"},
+  {n:"France",         f:"🇫🇷"},{n:"England",         f:"🏴"},
+  {n:"Netherlands",    f:"🇳🇱"},{n:"Spain",           f:"🇪🇸"},
+  {n:"Portugal",       f:"🇵🇹"},{n:"Belgium",         f:"🇧🇪"},
+  {n:"Norway",         f:"🇳🇴"},{n:"Sweden",          f:"🇸🇪"},
+  {n:"Denmark",        f:"🇩🇰"},{n:"Romania",         f:"🇷🇴"},
+  {n:"Bulgaria",       f:"🇧🇬"},{n:"Colombia",        f:"🇨🇴"},
+  {n:"Mexico",         f:"🇲🇽"},{n:"USA",             f:"🇺🇸"},
+  {n:"Nigeria",        f:"🇳🇬"},{n:"Cameroon",        f:"🇨🇲"},
+  {n:"Morocco",        f:"🇲🇦"},{n:"Saudi Arabia",    f:"🇸🇦"},
+  {n:"Japan",          f:"🇯🇵"},{n:"Korea Republic",  f:"🇰🇷"},
+  {n:"Russia",         f:"🇷🇺"},{n:"Ukraine",         f:"🇺🇦"},
+  {n:"Scotland",       f:"🏴"},{n:"Ireland",         f:"🇮🇪"},
+  {n:"Turkey",         f:"🇹🇷"},{n:"Uruguay",         f:"🇺🇾"},
+  {n:"Croatia",        f:"🇭🇷"},{n:"Czech Republic",  f:"🇨🇿"},
+  {n:"Austria",        f:"🇦🇹"},{n:"Switzerland",     f:"🇨🇭"},
+  {n:"Greece",         f:"🇬🇷"},{n:"Poland",          f:"🇵🇱"},
+  {n:"Chile",          f:"🇨🇱"},{n:"Peru",            f:"🇵🇪"},
+];
+
+/* ---------- STATE ---------- */
+const state = {
+  mode: null,            // 'online' | 'cpu'
+  isHost: false,
+  nick: '',
+  oppNick: '',
+  myTeam: null,
+  oppTeam: null,
+  myReady: false,
+  oppReady: false,
+  romBlob: null,
+  romName: '',
+  peer: null,
+  conn: null,            // PeerJS data connection
+  pc: null,              // RTCPeerConnection for media
+  mediaStream: null,
+  emulatorReady: false,
+};
+
+/* ---------- SCREENS ---------- */
+const SCREENS = ['screen-home','screen-online','screen-wait','screen-connect','screen-rom','screen-rom-wait','screen-teams','screen-game'];
+function showScreen(id) {
+  SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s === id));
+}
+
+/* ---------- NAVIGATION ---------- */
+function goHome() {
+  cleanupSession();
+  showScreen('screen-home');
+}
+function goOnline() {
+  state.mode = 'online';
+  showScreen('screen-online');
+  setTimeout(() => document.getElementById('nickOnline').focus(), 50);
+}
+function goCPU() {
+  state.mode = 'cpu';
+  state.isHost = true;
+  state.oppNick = 'CPU';
+  document.getElementById('romIntro').innerHTML = 'Підтримуються файли <b>.bin / .smd / .gen / .md</b> (Sega Mega Drive). ROM не входить у дистрибутив через авторські права — його потрібно мати локально.';
+  showScreen('screen-rom');
+  setupRomDrop();
+}
+
+/* ---------- STATUS HELPERS ---------- */
+function setStatus(elId, text, kind) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.className = 'status-line' + (kind ? ' ' + kind : '');
+  el.querySelector('span:last-child').textContent = text;
+  el.classList.remove('hidden');
+}
+function hideStatus(elId) {
+  const el = document.getElementById(elId);
+  if (el) el.classList.add('hidden');
+}
+
+/* ---------- NETWORK PRECHECK ---------- */
+(function precheckNetwork() {
+  const el = document.getElementById('netStatus');
+  if (!window.PeerJS || typeof Peer === 'undefined') {
+    el.textContent = "⚠ PeerJS не завантажився. Перевірте інтернет-з'єднання.";
+    document.getElementById('netStatus').parentElement.classList.add('err');
+    return;
+  }
+  el.textContent = 'Готово до онлайн-гри. WebRTC підтримується: ' + (typeof RTCPeerConnection !== 'undefined' ? 'так' : 'ні');
+})();
+
+/* ---------- ROOM CODE ---------- */
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+const ROOM_PREFIX = 'fifa97gold-';
+
+/* ---------- PEER SETUP ---------- */
+function createRoom() {
+  const nick = document.getElementById('nickOnline').value.trim() || 'Player1';
+  state.nick = nick;
+  state.isHost = true;
+  state.mode = 'online';
+  const code = genCode();
+  const peerId = ROOM_PREFIX + code;
+  setStatus('onlineStatus', 'Створюємо кімнату...', '');
+  state.peer = new Peer(peerId, { debug: 1 });
+  state.peer.on('open', () => {
+    document.getElementById('roomCode').textContent = code;
+    document.getElementById('roomHint').textContent = 'Натисніть на код, щоб скопіювати';
+    showScreen('screen-wait');
+    setStatus('waitStatus', 'Чекаємо підключення...', '');
+  });
+  state.peer.on('connection', (conn) => {
+    // first connection wins
+    if (state.conn) { conn.close(); return; }
+    state.conn = conn;
+    bindConn(conn);
+  });
+  state.peer.on('error', (err) => {
+    console.error('Peer error', err);
+    if (err.type === 'unavailable-id') {
+      setStatus('onlineStatus', 'Код колізія — спробуйте ще раз', 'err');
+    } else if (err.type === 'network' || err.type === 'server-error') {
+      setStatus('onlineStatus', 'Мережева помилка: ' + err.type, 'err');
+    } else {
+      setStatus('onlineStatus', 'Помилка: ' + err.type, 'err');
+    }
+  });
+}
+
+function joinRoom() {
+  const nick = document.getElementById('nickOnline').value.trim() || 'Player2';
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (code.length !== 6) {
+    setStatus('onlineStatus', 'Код має 6 символів', 'err');
+    return;
+  }
+  state.nick = nick;
+  state.isHost = false;
+  state.mode = 'online';
+  document.getElementById('connectingCode').textContent = code;
+  showScreen('screen-connect');
+  state.peer = new Peer({ debug: 1 });
+  state.peer.on('open', () => {
+    const conn = state.peer.connect(ROOM_PREFIX + code, { reliable: true, metadata: { nick } });
+    state.conn = conn;
+    bindConn(conn);
+    conn.on('open', () => {
+      // connected; will proceed to ROM wait
+      conn.send({ t: 'hello', nick });
+    });
+  });
+  state.peer.on('error', (err) => {
+    console.error('Peer error', err);
+    if (err.type === 'peer-unavailable') {
+      setStatus('onlineStatus', 'Кімнату не знайдено. Перевірте код.', 'err');
+      showScreen('screen-online');
+    } else {
+      setStatus('onlineStatus', 'Помилка: ' + err.type, 'err');
+    }
+  });
+}
+
+function copyCode() {
+  const code = document.getElementById('roomCode').textContent;
+  navigator.clipboard?.writeText(code).then(() => {
+    document.getElementById('roomHint').textContent = '✓ Скопійовано!';
+    setTimeout(() => document.getElementById('roomHint').textContent = 'Натисніть на код, щоб скопіювати', 1500);
+  });
+}
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'roomCode') copyCode();
+});
+
+function cancelWait() { cleanupSession(); goHome(); }
+function cancelConnect() { cleanupSession(); goHome(); }
+
+/* ---------- DATA CHANNEL ---------- */
+function bindConn(conn) {
+  conn.on('data', (data) => onRemoteMsg(data));
+  conn.on('close', () => onPeerGone());
+  conn.on('error', (e) => { console.error('conn err', e); onPeerGone(); });
+}
+
+function sendMsg(obj) {
+  if (state.conn && state.conn.open) {
+    try { state.conn.send(obj); } catch(e) { console.warn('send fail', e); }
+  }
+}
+
+function onRemoteMsg(msg) {
+  if (!msg || !msg.t) return;
+  switch (msg.t) {
+    case 'hello':
+      state.oppNick = msg.nick || 'Player2';
+      // host receives join → reply with hello + nick
+      if (state.isHost) {
+        sendMsg({ t: 'hello', nick: state.nick });
+        // proceed to ROM upload for host
+        showScreen('screen-rom');
+        setupRomDrop();
+      } else {
+        // client got host's hello → go to ROM-wait screen
+        showScreen('screen-rom-wait');
+      }
+      break;
+    case 'team':
+      state.oppTeam = msg.team;
+      state.oppReady = !!msg.ready;
+      renderSlots();
+      maybeEnableStart();
+      break;
+    case 'ready':
+      state.oppReady = true;
+      renderSlots();
+      maybeEnableStart();
+      break;
+    case 'start':
+      // host tells client to switch to game screen (will get video soon)
+      showScreen('screen-game');
+      showGameOverlay('Очікуємо відео від хоста...');
+      document.getElementById('p2ControlsBlock').classList.remove('hidden');
+      break;
+    case 'webrtc-offer':
+      handleOffer(msg);
+      break;
+    case 'webrtc-answer':
+      handleAnswer(msg);
+      break;
+    case 'webrtc-ice':
+      handleRemoteIce(msg.candidate);
+      break;
+    case 'chat':
+      appendChat(msg.from, msg.text, msg.from === state.oppNick ? 'p2' : '');
+      break;
+    case 'input':
+      // host receives input from client → simulate key event on document
+      if (state.isHost) simulateKey(msg.key, msg.down);
+      break;
+    case 'leave':
+      onPeerGone();
+      break;
+  }
+}
+
+function onPeerGone() {
+  if (state.mode !== 'online') return;
+  appendChat('SYSTEM', 'Опонент вийшов', 'sys');
+  // offer to go home
+  if (document.getElementById('screen-game').classList.contains('active')) {
+    showGameOverlay('З\'єднання розірвано. Опонент вийшов.');
+  }
+}
+
+/* ---------- ROM UPLOAD ---------- */
+function setupRomDrop() {
+  const drop = document.getElementById('romDrop');
+  const input = document.getElementById('romFile');
+  const name = document.getElementById('romName');
+  if (!drop) return;
+  if (input._bound) return;
+  input._bound = true;
+  input.addEventListener('change', () => {
+    if (input.files && input.files[0]) handleRomFile(input.files[0]);
+  });
+  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, (e) => {
+    e.preventDefault(); drop.classList.add('over');
+  }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, (e) => {
+    e.preventDefault(); drop.classList.remove('over');
+  }));
+  drop.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleRomFile(e.dataTransfer.files[0]);
+  });
+}
+
+function handleRomFile(file) {
+  const ok = /\.(bin|smd|gen|md|zip)$/i.test(file.name);
+  if (!ok) {
+    setStatus('romStatus', 'Невірний формат. Очікуємо .bin/.smd/.gen/.md/.zip', 'err');
+    return;
+  }
+  state.romBlob = file;
+  state.romName = file.name;
+  document.getElementById('romName').textContent = '✓ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+  setStatus('romStatus', 'ROM завантажено. Натисніть «Далі».', '');
+  document.getElementById('romContinue').disabled = false;
+}
+
+function afterRom() {
+  // both modes: go to team select
+  // For online host: notify client that we proceed to team select
+  if (state.mode === 'online' && state.isHost) {
+    sendMsg({ t: 'start' }); // signal client to enter game-stage wait (we'll do team select first; client will see overlay)
+    // Actually we want client to also reach team-select, but client has no ROM. Show client "team select" too.
+  }
+  showScreen('screen-teams');
+  renderTeams();
+  renderSlots();
+}
+
+/* ---------- TEAM SELECT ---------- */
+function renderTeams() {
+  const grid = document.getElementById('teamsGrid');
+  grid.innerHTML = '';
+  TEAMS.forEach((t) => {
+    const c = document.createElement('div');
+    c.className = 'team-card';
+    c.dataset.team = t.n;
+    c.innerHTML = `<div class="flag">${t.f}</div><div class="name">${t.n}</div>`;
+    c.onclick = () => pickTeam(t.n);
+    grid.appendChild(c);
+  });
+}
+
+function pickTeam(name) {
+  // For CPU mode: clicking selects for P1 if no P1 selected, then P2 on next click
+  // For online: only select my team
+  if (state.mode === 'cpu') {
+    if (!state.myTeam) { state.myTeam = name; }
+    else if (!state.oppTeam) { state.oppTeam = name; }
+    else { state.myTeam = name; state.oppTeam = null; state.myReady = false; }
+    renderSlots();
+    maybeEnableStart();
+  } else {
+    state.myTeam = name;
+    state.myReady = false;
+    renderSlots();
+    sendMsg({ t: 'team', team: name, ready: false });
+  }
+  // highlight
+  document.querySelectorAll('.team-card').forEach(c => {
+    c.classList.remove('selected-p1','selected-p2');
+    if (state.myTeam && c.dataset.team === state.myTeam) c.classList.add('selected-p1');
+    if (state.oppTeam && c.dataset.team === state.oppTeam) c.classList.add('selected-p2');
+  });
+}
+
+function renderSlots() {
+  document.getElementById('p1Name').textContent = state.nick;
+  document.getElementById('p2Name').textContent = state.oppNick || '—';
+  document.getElementById('p1Pick').textContent = state.myTeam || '— не обрано —';
+  document.getElementById('p2Pick').textContent = state.oppTeam || '— не обрано —';
+  const r1 = document.getElementById('p1Ready');
+  const r2 = document.getElementById('p2Ready');
+  r1.textContent = state.myReady ? '✓ ГОТОВИЙ' : 'очікування';
+  r2.textContent = state.oppReady ? '✓ ГОТОВИЙ' : 'очікування';
+  r1.classList.toggle('ok', state.myReady);
+  r2.classList.toggle('ok', state.oppReady);
+}
+
+function confirmTeam() {
+  if (!state.myTeam) {
+    setStatus('teamsStatus', 'Спершу оберіть команду', 'err');
+    return;
+  }
+  state.myReady = true;
+  renderSlots();
+  if (state.mode === 'online') {
+    sendMsg({ t: 'team', team: state.myTeam, ready: true });
+  }
+  maybeEnableStart();
+}
+
+function maybeEnableStart() {
+  const btn = document.getElementById('startGameBtn');
+  if (state.mode === 'cpu') {
+    // CPU: just need my team + opp team + ready
+    btn.disabled = !(state.myTeam && state.oppTeam && state.myReady);
+  } else {
+    // online: host can start when both ready and both have team
+    if (state.isHost) {
+      btn.disabled = !(state.myTeam && state.oppTeam && state.myReady && state.oppReady);
+    } else {
+      btn.disabled = true;
+      btn.textContent = 'Чекаємо хоста...';
+    }
+  }
+}
+
+/* ---------- START GAME ---------- */
+function startGame() {
+  if (state.mode === 'cpu') {
+    showScreen('screen-game');
+    launchEmulator();
+  } else {
+    // host launches emulator, then sets up WebRTC media stream
+    showScreen('screen-game');
+    launchEmulator();
+    sendMsg({ t: 'start' });
+    // client will switch to screen-game; once host's emulator canvas is ready, we captureStream and negotiate
+    document.getElementById('p2ControlsBlock').classList.add('hidden');
+  }
+  // fill game side panel
+  document.getElementById('gp1Name').textContent = state.nick;
+  document.getElementById('gp2Name').textContent = state.oppNick;
+  document.getElementById('gp1Team').textContent = state.myTeam || '—';
+  document.getElementById('gp2Team').textContent = state.oppTeam || '—';
+}
+
+/* ---------- EMULATORJS ---------- */
+let emulatorStarted = false;
+function launchEmulator() {
+  if (emulatorStarted) return;
+  emulatorStarted = true;
+  const romUrl = URL.createObjectURL(state.romBlob);
+
+  // Configure EmulatorJS
+  window.EJS_player        = '#game';
+  window.EJS_core          = 'segaMD';
+  window.EJS_gameUrl       = romUrl;
+  window.EJS_gameName      = 'FIFA 97 Gold';
+  window.EJS_pathtodata    = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@latest/data/';
+  window.EJS_startOnLoaded = true;
+  window.EJS_color         = '#00ff7f';
+  window.EJS_backgroundColor = '#000';
+  window.EJS_alignStartButton = 'center';
+  window.EJS_DEBUG_XX      = false;
+  // disable ads / external calls if possible
+  window.EJS_adUrl         = '';
+
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@latest/data/loader.js';
+  script.onload = () => {
+    // wait for the emulator canvas to appear
+    waitForCanvas().then(() => {
+      state.emulatorReady = true;
+      if (state.mode === 'online' && state.isHost) {
+        // start WebRTC negotiation: send offer
+        startMediaNegotiation();
+      }
+    }).catch(err => console.warn('canvas wait failed', err));
+  };
+  script.onerror = () => {
+    showGameOverlay('Не вдалося завантажити емулятор (EmulatorJS CDN). Перевірте інтернет.');
+  };
+  document.body.appendChild(script);
+}
+
+function waitForCanvas() {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const tick = () => {
+      const canvas = document.querySelector('#game canvas');
+      if (canvas) return resolve(canvas);
+      if (Date.now() - start > 30000) return reject(new Error('timeout'));
+      setTimeout(tick, 300);
+    };
+    tick();
+  });
+}
+
+/* ---------- WEBRTC MEDIA (host streams canvas + audio) ---------- */
+async function startMediaNegotiation() {
+  try {
+    const canvas = document.querySelector('#game canvas');
+    if (!canvas) { console.warn('no canvas to stream'); return; }
+    const stream = canvas.captureStream(30);
+    // try to also capture audio via EmulatorJS — best effort
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const dest = audioCtx.createMediaStreamDestination();
+      // EmulatorJS plays audio via an <audio> or webaudio; capturing is hard.
+      // We attach audio if there's a known element.
+      const audioEl = document.querySelector('#game audio');
+      if (audioEl && audioEl.captureStream) {
+        const aStream = audioEl.captureStream();
+        aStream.getAudioTracks().forEach(t => stream.addTrack(t));
+      }
+    } catch(e) { console.warn('audio capture skipped', e); }
+
+    state.mediaStream = stream;
+    const pc = new RTCPeerConnection({ iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]});
+    state.pc = pc;
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) sendMsg({ t: 'webrtc-ice', candidate: e.candidate });
+    };
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    sendMsg({ t: 'webrtc-offer', sdp: pc.localDescription });
+  } catch(e) {
+    console.error('media negotiation failed', e);
+  }
+}
+
+async function handleOffer(msg) {
+  // client side
+  const pc = new RTCPeerConnection({ iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]});
+  state.pc = pc;
+  pc.onicecandidate = (e) => {
+    if (e.candidate) sendMsg({ t: 'webrtc-ice', candidate: e.candidate });
+  };
+  pc.ontrack = (e) => {
+    const v = document.getElementById('remoteVideo');
+    v.srcObject = e.streams[0];
+    v.classList.remove('hidden');
+    document.getElementById('game').classList.add('hidden');
+    hideGameOverlay();
+  };
+  await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  sendMsg({ t: 'webrtc-answer', sdp: pc.localDescription });
+}
+
+async function handleAnswer(msg) {
+  if (state.pc) {
+    try { await state.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp)); } catch(e){ console.warn(e); }
+  }
+}
+
+async function handleRemoteIce(candidate) {
+  if (state.pc) {
+    try { await state.pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e){ console.warn('ice add fail', e); }
+  }
+}
+
+/* ---------- INPUT FORWARDING (client → host) ---------- */
+// Client presses P2 keys → we send to host → host simulates keyboard events for EmulatorJS P2.
+// EmulatorJS default P2 mapping is configurable; we send symbolic key codes and host simulates with same key values.
+const P2_KEY_MAP = {
+  'KeyW':'up','KeyA':'left','KeyS':'down','KeyD':'right',
+  'KeyJ':'a','KeyK':'b','KeyL':'c','KeyU':'start'
+};
+
+document.addEventListener('keydown', (e) => {
+  if (state.mode !== 'online' || state.isHost) return;
+  if (!state.conn || !state.conn.open) return;
+  const sym = P2_KEY_MAP[e.code];
+  if (sym) {
+    e.preventDefault();
+    sendMsg({ t: 'input', key: sym, down: true });
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (state.mode !== 'online' || state.isHost) return;
+  if (!state.conn || !state.conn.open) return;
+  const sym = P2_KEY_MAP[e.code];
+  if (sym) {
+    e.preventDefault();
+    sendMsg({ t: 'input', key: sym, down: false });
+  }
+});
+
+// Host: simulate key event using KeyboardEvent on document with the standard P1 key codes,
+// since most emulator cores bind P1 to arrows + Z/X/C. For P2 we use IJKL etc. — we dispatch
+// those codes so EmulatorJS's P2 default bindings (if any) catch them.
+const HOST_P2_DISPATCH = {
+  'up':'ArrowUp','down':'ArrowDown','left':'ArrowLeft','right':'ArrowRight',
+  'a':'KeyZ','b':'KeyX','c':'KeyC','start':'Enter'
+};
+// We dispatch key events that EmulatorJS's P2 controller will pick up. If P2 is not bound by default,
+// the host can rebind P2 in the in-game EmulatorJS settings to these codes.
+function simulateKey(sym, down) {
+  const code = HOST_P2_DISPATCH[sym];
+  if (!code) return;
+  // Try to dispatch a synthetic KeyboardEvent. EmulatorJS listens to keydown/keyup on window.
+  try {
+    const ev = new KeyboardEvent(down ? 'keydown':'keyup', {
+      code: code,
+      key: codeToKey(code),
+      bubbles: true, cancelable: true
+    });
+    document.dispatchEvent(ev);
+  } catch(e){ console.warn('simulateKey fail', e); }
+}
+function codeToKey(code) {
+  const m = {ArrowUp:'ArrowUp',ArrowDown:'ArrowDown',ArrowLeft:'ArrowLeft',ArrowRight:'ArrowRight',KeyZ:'z',KeyX:'x',KeyC:'c',Enter:'Enter'};
+  return m[code] || '';
+}
+
+/* ---------- CHAT ---------- */
+function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  appendChat(state.nick, txt, 'p1');
+  if (state.mode === 'online') {
+    sendMsg({ t: 'chat', from: state.nick, text: txt });
+  }
+  inp.value = '';
+}
+function appendChat(who, text, cls) {
+  const log = document.getElementById('chatLog');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<span class="who ${cls||''}">${escapeHtml(who)}:</span> <span class="txt">${escapeHtml(text)}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- OVERLAY ---------- */
+function showGameOverlay(text) {
+  const o = document.getElementById('gameOverlay');
+  o.textContent = text;
+  o.classList.remove('hidden');
+}
+function hideGameOverlay() {
+  document.getElementById('gameOverlay').classList.add('hidden');
+}
+
+/* ---------- LEAVE / CLEANUP ---------- */
+function leaveSession() {
+  sendMsg({ t: 'leave' });
+  cleanupSession();
+  goHome();
+}
+function cleanupSession() {
+  try { if (state.conn) state.conn.close(); } catch(e){}
+  try { if (state.peer) state.peer.destroy(); } catch(e){}
+  try { if (state.pc) state.pc.close(); } catch(e){}
+  try { if (state.mediaStream) state.mediaStream.getTracks().forEach(t => t.stop()); } catch(e){}
+  // reset state
+  state.mode = null;
+  state.isHost = false;
+  state.oppNick = '';
+  state.myTeam = null;
+  state.oppTeam = null;
+  state.myReady = false;
+  state.oppReady = false;
+  state.romBlob = null;
+  state.romName = '';
+  state.conn = null;
+  state.peer = null;
+  state.pc = null;
+  state.mediaStream = null;
+  state.emulatorReady = false;
+  emulatorStarted = false;
+  // reset UI
+  document.getElementById('nickOnline').value = '';
+  document.getElementById('joinCode').value = '';
+  document.getElementById('roomCode').textContent = '------';
+  document.getElementById('romName').textContent = '';
+  document.getElementById('romContinue').disabled = true;
+  hideStatus('onlineStatus'); hideStatus('waitStatus'); hideStatus('romStatus'); hideStatus('teamsStatus');
+  document.getElementById('chatLog').innerHTML = '';
+  document.getElementById('p2ControlsBlock').classList.add('hidden');
+  document.getElementById('remoteVideo').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
+  hideGameOverlay();
+  // reset emulator container
+  const g = document.getElementById('game');
+  g.innerHTML = '';
+  // remove any leftover emulator scripts/styles
+  document.querySelectorAll('script[src*="EmulatorJS"]').forEach(s => s.remove());
+}
+
+/* ---------- INIT ---------- */
+appendChat('SYSTEM', 'Сторінка готова. Оберіть режим.', 'sys');
+</script>
+</body>
+</html>
