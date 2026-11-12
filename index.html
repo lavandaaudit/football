@@ -567,16 +567,19 @@ function launchEmulator() {
   // don't override our EJS_defaultControls. Without this, keys may silently stop working.
   window.EJS_disableLocalStorage = true;
 
-  // Classic WASD layout for P1 (host/solo) — verified button IDs from EmulatorJS segaMD virtual gamepad config:
-  //   A button = ID 1, B button = ID 0, C button = ID 8, X=10, Y=9, Z=11, Mode=2, Start=3
+  // Classic WASD layout for P1 (host/solo).
+  // EMPIRICALLY VERIFIED button IDs for Genesis Plus GX core (segaMD) in EmulatorJS 4.2.3:
+  //   A button = ID 9 (advances menu = confirm = Pass / Switch player in gameplay)
+  //   B button = ID 0 (Shoot / Slide tackle)
+  //   C button = ID 8 (Through ball / Goalkeeper charge)
   //   D-pad: Up=4, Down=5, Left=6, Right=7
-  // FIFA 97 layout: A=Pass/Switch-player, B=Shoot/Slide-tackle, C=Through-ball/Goalkeeper
+  //   Mode=2, Start=3, X=10, Y=1, Z=11 (6-button extras, rarely used in FIFA 97)
   // NOTE: All 4 player slots (0-3) must exist (even if empty) or setupKeys() crashes.
   window.EJS_defaultControls = {
     0: {
       // P1 = WASD + JKL (classic PC FIFA feel)
       0: {value: 'k',     value2: 'B'},                 // B button = K  (Удар / Підкат)
-      1: {value: 'j',     value2: 'A'},                 // A button = J  (Пас / Перемикання)
+      1: {value: 'i',     value2: 'Y'},                 // Y (6-button, unused in FIFA 97)
       2: {value: 'v',     value2: 'MODE'},              // Mode = V
       3: {value: 'space', value2: 'START'},             // Start = Space
       4: {value: 'w',     value2: 'UP'},                // D-pad Up = W
@@ -584,14 +587,14 @@ function launchEmulator() {
       6: {value: 'a',     value2: 'LEFT'},              // D-pad Left = A
       7: {value: 'd',     value2: 'RIGHT'},             // D-pad Right = D
       8: {value: 'l',     value2: 'C'},                 // C button = L  (Пас на ході / Голкіпер)
-      9: {value: 'e',     value2: 'Y'},                 // Y button = E (6-button)
-      10:{value: 'q',     value2: 'X'},                 // X button = Q (6-button)
-      11:{value: 'r',     value2: 'Z'},                 // Z button = R (6-button)
+      9: {value: 'j',     value2: 'A'},                 // A button = J  (Пас / Перемикання) ← KEY FIX
+      10:{value: 'q',     value2: 'X'},                 // X (6-button)
+      11:{value: 'e',     value2: 'Z'},                 // Z (6-button)
     },
     1: {
       // P2 (local 2P / fallback) = Arrows + Z/X/C
       0: {value: 'x',     value2: 'B'},                 // B button = X
-      1: {value: 'z',     value2: 'A'},                 // A button = Z
+      1: {value: 'i',     value2: 'Y'},
       2: {value: 'period',value2: 'MODE'},              // Mode = .
       3: {value: 'enter', value2: 'START'},             // Start = Enter
       4: {value: 'up arrow',    value2: 'UP'},
@@ -599,9 +602,9 @@ function launchEmulator() {
       6: {value: 'left arrow',  value2: 'LEFT'},
       7: {value: 'right arrow', value2: 'RIGHT'},
       8: {value: 'c',     value2: 'C'},                 // C button = C
-      9: {value: 'o',     value2: 'Y'},
-      10:{value: 'i',     value2: 'X'},
-      11:{value: 'p',     value2: 'Z'},
+      9: {value: 'z',     value2: 'A'},                 // A button = Z  ← KEY FIX
+      10:{value: 'q',     value2: 'X'},
+      11:{value: 'r',     value2: 'Z'},
     },
     2: {},
     3: {}
@@ -943,13 +946,13 @@ document.addEventListener('keyup', (e) => {
 });
 
 // Host: forward P2 input directly to emulator core via gameManager.simulateInput
-// Verified Sega MD button IDs: 0=B, 1=A, 2=Mode, 3=Start, 4=Up, 5=Down, 6=Left, 7=Right, 8=C, 9=Y, 10=X, 11=Z
+// EMPIRICALLY VERIFIED Sega MD button IDs: A=9, B=0, C=8, Mode=2, Start=3, D-pad 4-7
 const P2_BUTTON_MAP = {
   'up':    [1, 4],  // P2, DPAD_UP
   'down':  [1, 5],  // P2, DPAD_DOWN
   'left':  [1, 6],  // P2, DPAD_LEFT
   'right': [1, 7],  // P2, DPAD_RIGHT
-  'a':     [1, 1],  // P2, A button (Pass / Switch player)
+  'a':     [1, 9],  // P2, A button (Pass / Switch player)  ← FIXED
   'b':     [1, 0],  // P2, B button (Shoot / Slide tackle)
   'c':     [1, 8],  // P2, C button (Through ball / Goalkeeper)
   'start': [1, 3]   // P2, Start
