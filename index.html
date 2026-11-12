@@ -247,6 +247,59 @@
   }
   .controls-help .k.y { color: var(--yellow); }
 
+  /* MODE TABS */
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .mode-tab {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .mode-tab.active {
+    border-color: var(--neon);
+    color: var(--neon);
+    background: rgba(0,255,127,0.08);
+    box-shadow: 0 0 8px rgba(0,255,127,0.15);
+  }
+  .mode-tab.active.y {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    background: rgba(255,208,0,0.08);
+    box-shadow: 0 0 8px rgba(255,208,0,0.15);
+  }
+  .mode-tab small { display:block; font-size:8px; color:inherit; opacity:0.7; margin-top:2px; letter-spacing:0.5px; text-transform:none; font-weight:normal }
+
+  /* FOCUS HINT */
+  .focus-hint {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--neon-dim);
+    color: var(--neon);
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    z-index: 4;
+    pointer-events: none;
+    animation: pulse 2s infinite;
+  }
+  .focus-hint.hide { display: none; }
+
   footer {
     text-align: center;
     color: var(--muted);
@@ -274,6 +327,7 @@
     <div class="game-stage" id="gameStage">
       <div id="game"></div>
       <video id="remoteVideo" autoplay muted playsinline class="hidden"></video>
+      <div class="focus-hint" id="focusHint">▶ Клікни на гру · Enter = Start</div>
       <div class="overlay-msg" id="gameOverlay">
         <div class="spinner"></div>
         <div id="overlayText">Завантаження гри...</div>
@@ -283,8 +337,23 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
 
-      <!-- ONLINE CABINET -->
+      <!-- MODE SELECT -->
       <div class="panel">
+        <h3>Режим гри</h3>
+        <div class="mode-tabs">
+          <button class="mode-tab active" id="modeTabSolo" onclick="setMode('solo')">Соло<small>vs CPU / 2P локально</small></button>
+          <button class="mode-tab y" id="modeTabOnline" onclick="setMode('online')">Онлайн<small>з другом за кодом</small></button>
+        </div>
+        <div id="modeSoloHelp" class="status-line" style="border-color:var(--neon);color:var(--neon)">
+          <span>·</span><span>Граєш сам. В меню FIFA 97: Exhibition → обери vs CPU або 2 Player.</span>
+        </div>
+        <div id="modeOnlineHelp" class="status-line hidden" style="border-color:var(--yellow);color:var(--yellow)">
+          <span>·</span><span>Створи кімнату або приєднайся за кодом друга нижче.</span>
+        </div>
+      </div>
+
+      <!-- ONLINE CABINET -->
+      <div class="panel" id="cabinetPanel">
         <h3>Онлайн кабінет <span class="dot" id="netDot"></span></h3>
 
         <div class="field">
@@ -388,6 +457,31 @@ function setStatus(text, kind) {
   const dot = document.getElementById('netDot');
   dot.className = 'dot' + (kind === 'ok' ? ' on' : kind === 'warn' ? ' wait' : '');
 }
+
+/* ---------- MODE SELECT ---------- */
+function setMode(mode) {
+  const solo = document.getElementById('modeTabSolo');
+  const onln = document.getElementById('modeTabOnline');
+  const cab  = document.getElementById('cabinetPanel');
+  const hS = document.getElementById('modeSoloHelp');
+  const hO = document.getElementById('modeOnlineHelp');
+  if (mode === 'online') {
+    solo.classList.remove('active');
+    onln.classList.add('active');
+    hS.classList.add('hidden');
+    hO.classList.remove('hidden');
+    // scroll cabinet into view (on mobile mainly)
+    cab.style.borderColor = 'var(--yellow)';
+    appendChat('SYSTEM', 'Режим: Онлайн. Створи кімнату або введи код друга.', 'sys');
+  } else {
+    solo.classList.add('active');
+    onln.classList.remove('active');
+    hS.classList.remove('hidden');
+    hO.classList.add('hidden');
+    cab.style.borderColor = '';
+    appendChat('SYSTEM', 'Режим: Соло. В меню FIFA 97 оберіть Exhibition → vs CPU або 2 Player.', 'sys');
+  }
+}
 function showOverlay(text) {
   const o = document.getElementById('gameOverlay');
   document.getElementById('overlayText').textContent = text;
@@ -424,12 +518,51 @@ function launchEmulator() {
   window.EJS_alignStartButton = 'center';
   window.EJS_DEBUG_XX      = false;
   window.EJS_adUrl         = '';
-  // When emulator is ready, hide overlay
+
+  // Explicit keyboard mapping for P1 (arrows + ZXC + Enter) and P2 (WASD + JKL + U)
+  // Button IDs for Sega MD core: 0=B, 2=Select/Mode, 3=Start,
+  // 4-7=DPAD UDLR, 8=A, 9=C, 10=X, 11=Y, 12=Z
+  // NOTE: All 4 player slots (0-3) must exist (even if empty) or setupKeys() crashes.
+  window.EJS_defaultControls = {
+    0: {
+      0: {value: 'x',     value2: 'BUTTON_2'},         // B
+      2: {value: 'v',     value2: 'SELECT'},            // Mode
+      3: {value: 'enter', value2: 'START'},             // Start
+      4: {value: 'up arrow',    value2: 'DPAD_UP'},
+      5: {value: 'down arrow',  value2: 'DPAD_DOWN'},
+      6: {value: 'left arrow',  value2: 'DPAD_LEFT'},
+      7: {value: 'right arrow', value2: 'DPAD_RIGHT'},
+      8: {value: 'z',     value2: 'BUTTON_1'},          // A
+      9: {value: 'a',     value2: 'BUTTON_3'},          // C
+      10:{value: 'q',     value2: 'LEFT_TOP_SHOULDER'}, // X
+      11:{value: 'e',     value2: 'RIGHT_TOP_SHOULDER'},// Y
+      12:{value: 'tab',   value2: 'LEFT_BOTTOM_SHOULDER'}, // Z
+    },
+    1: {
+      0: {value: 'k',     value2: 'BUTTON_2'},          // B (P2)
+      2: {value: 'period',value2: 'SELECT'},            // Mode
+      3: {value: 'u',     value2: 'START'},             // Start
+      4: {value: 'w',     value2: 'DPAD_UP'},
+      5: {value: 's',     value2: 'DPAD_DOWN'},
+      6: {value: 'a',     value2: 'DPAD_LEFT'},
+      7: {value: 'd',     value2: 'DPAD_RIGHT'},
+      8: {value: 'j',     value2: 'BUTTON_1'},          // A
+      9: {value: 'l',     value2: 'BUTTON_3'},          // C
+      10:{value: 'i',     value2: 'LEFT_TOP_SHOULDER'}, // X
+      11:{value: 'o',     value2: 'RIGHT_TOP_SHOULDER'},// Y
+    },
+    2: {},
+    3: {}
+  };
+
+  // When emulator is ready, hide overlay + auto-focus the game so keyboard works
   window.EJS_ready = function() {
     hideOverlay();
+    focusGame();
+    appendChat('SYSTEM', 'Гра готова. Натисніть Enter (Start) для початку. В меню FIFA 97 оберіть Exhibition → vs CPU або 2P.', 'sys');
     if (state.isHost === true) {
-      // We're host and connected — start streaming
-      startMediaNegotiation();
+      const canvas = document.querySelector('#game canvas');
+      if (canvas) startMediaNegotiation();
     }
   };
 
@@ -438,6 +571,34 @@ function launchEmulator() {
   s.onerror = () => showOverlay('Не вдалося завантажити емулятор. Перевірте інтернет.');
   document.body.appendChild(s);
 }
+
+/* Auto-focus the EmulatorJS game container so keyboard input reaches it */
+function focusGame() {
+  try {
+    const parent = (window.EJS_emulator && window.EJS_emulator.elements && window.EJS_emulator.elements.parent) || document.getElementById('game');
+    if (parent) {
+      if (parent.tabIndex < 0) parent.tabIndex = 0;
+      parent.focus();
+      // hide the focus hint once we've focused
+      const hint = document.getElementById('focusHint');
+      if (hint) hint.classList.add('hide');
+    }
+  } catch(e) { console.warn('focusGame failed', e); }
+}
+
+/* Click anywhere on the game stage → focus the emulator */
+document.addEventListener('DOMContentLoaded', () => {
+  const stage = document.getElementById('gameStage');
+  if (stage) {
+    stage.addEventListener('mousedown', () => setTimeout(focusGame, 50));
+    stage.addEventListener('touchstart', () => setTimeout(focusGame, 50));
+  }
+  // Also hide the focus hint after first key press
+  document.addEventListener('keydown', () => {
+    const hint = document.getElementById('focusHint');
+    if (hint) hint.classList.add('hide');
+  }, { once: true });
+});
 
 function waitForCanvas() {
   return new Promise((resolve, reject) => {
