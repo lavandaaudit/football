@@ -286,17 +286,32 @@
   /* FOCUS HINT */
   .focus-hint {
     position: absolute;
-    top: 8px; left: 8px;
-    background: rgba(0,0,0,0.7);
-    border: 1px solid var(--neon-dim);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    border: 2px solid var(--neon);
     color: var(--neon);
-    padding: 5px 10px;
-    border-radius: 3px;
+    padding: 16px 28px;
+    border-radius: 6px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    z-index: 6;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 0 24px rgba(0,255,127,0.4);
+    animation: pulse 1.6s infinite;
+    text-shadow: 0 0 6px rgba(0,255,127,0.5);
+  }
+  .focus-hint small {
+    display: block;
+    margin-top: 6px;
     font-size: 10px;
-    letter-spacing: 0.5px;
-    z-index: 4;
-    pointer-events: none;
-    animation: pulse 2s infinite;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0.3px;
+    font-weight: normal;
   }
   .focus-hint.hide { display: none; }
 
@@ -327,7 +342,7 @@
     <div class="game-stage" id="gameStage">
       <div id="game"></div>
       <video id="remoteVideo" autoplay muted playsinline class="hidden"></video>
-      <div class="focus-hint" id="focusHint">▶ Клікни на гру · Enter = Start</div>
+      <div class="focus-hint" id="focusHint" onclick="focusGame()">▶ КЛІКНИ СЮДИ ЩОБ ГРАТИ<small>потім Enter = Start · стрілки = рух · Z/X/C = A/B/C</small></div>
       <div class="overlay-msg" id="gameOverlay">
         <div class="spinner"></div>
         <div id="overlayText">Завантаження гри...</div>
@@ -403,15 +418,20 @@
 
       <!-- CONTROLS -->
       <div class="panel">
-        <h3>Керування</h3>
+        <h3>Керування <button class="btn sm" onclick="focusGame()" style="float:right;margin-top:-4px">↺ Фокус</button></h3>
         <div class="controls-help">
-          <div style="margin-bottom:4px;color:var(--neon)">P1 (хост):</div>
+          <div style="margin-bottom:4px;color:var(--neon)">P1 (ти):</div>
           <div><span class="k">↑</span><span class="k">↓</span><span class="k">←</span><span class="k">→</span> рух</div>
-          <div><span class="k">Z</span>A · <span class="k">X</span>B · <span class="k">C</span>C · <span class="k">↵</span>Start</div>
+          <div><span class="k">Z</span>A · <span class="k">X</span>B · <span class="k">A</span>C · <span class="k">↵</span>Start</div>
           <div id="p2ctrl" class="hidden">
-            <div style="margin:6px 0 4px;color:var(--yellow)">P2 (ви, клієнт):</div>
+            <div style="margin:6px 0 4px;color:var(--yellow)">P2 (клієнт):</div>
             <div><span class="k y">W</span><span class="k y">A</span><span class="k y">S</span><span class="k y">D</span> рух</div>
             <div><span class="k y">J</span>A · <span class="k y">K</span>B · <span class="k y">L</span>C · <span class="k y">U</span>Start</div>
+          </div>
+          <div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--border);color:var(--muted);font-size:9px;line-height:1.5">
+            ⚠ Якщо кнопки не реагують: клікни на гру або тисни «↺ Фокус».<br>
+            ⏳ Перший запуск ~15 сек (завантаження ROM + ядра).<br>
+            ▶ На титульному екрані FIFA 97 тисни Enter (Start) щоб потрапити в меню.
           </div>
         </div>
       </div>
@@ -518,6 +538,9 @@ function launchEmulator() {
   window.EJS_alignStartButton = 'center';
   window.EJS_DEBUG_XX      = false;
   window.EJS_adUrl         = '';
+  // CRITICAL: disable localStorage so saved control settings from previous visits
+  // don't override our EJS_defaultControls. Without this, keys may silently stop working.
+  window.EJS_disableLocalStorage = true;
 
   // Explicit keyboard mapping for P1 (arrows + ZXC + Enter) and P2 (WASD + JKL + U)
   // Button IDs for Sega MD core: 0=B, 2=Select/Mode, 3=Start,
