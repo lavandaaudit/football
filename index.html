@@ -367,7 +367,7 @@
     <div class="game-stage" id="gameStage">
       <div id="game"></div>
       <video id="remoteVideo" autoplay muted playsinline class="hidden"></video>
-      <div class="focus-hint" id="focusHint" onclick="focusGame()">▶ КЛІКНИ СЮДИ ЩОБ ГРАТИ<small>потім Enter = Start · стрілки = рух · Z/X/C = A/B/C</small></div>
+      <div class="focus-hint" id="focusHint" onclick="focusGame()">▶ КЛІКНИ СЮДИ ЩОБ ГРАТИ<small>WASD = рух · J=Пас · K=Удар · L=Пас на ході · Space=Start</small></div>
       <div class="overlay-msg" id="gameOverlay">
         <div class="spinner"></div>
         <div id="overlayText">Завантаження гри...</div>
@@ -445,18 +445,18 @@
       <div class="panel">
         <h3>Керування <button class="btn sm" onclick="focusGame()" style="float:right;margin-top:-4px">↺ Фокус</button></h3>
         <div class="controls-help">
-          <div style="margin-bottom:4px;color:var(--neon)">P1 (ти):</div>
-          <div><span class="k">↑</span><span class="k">↓</span><span class="k">←</span><span class="k">→</span> рух</div>
-          <div><span class="k">Z</span>A · <span class="k">X</span>B · <span class="k">A</span>C · <span class="k">↵</span>Start</div>
+          <div style="margin-bottom:4px;color:var(--neon)">P1 (ти / хост):</div>
+          <div><span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> рух</div>
+          <div><span class="k">J</span>Пас / Перемкн.<br><span class="k">K</span>Удар / Підкат<br><span class="k">L</span>Пас на ході / Голкіпер<br><span class="k">␣</span>Start</div>
           <div id="p2ctrl" class="hidden">
-            <div style="margin:6px 0 4px;color:var(--yellow)">P2 (клієнт):</div>
+            <div style="margin:6px 0 4px;color:var(--yellow)">P2 (клієнт, теж WASD):</div>
             <div><span class="k y">W</span><span class="k y">A</span><span class="k y">S</span><span class="k y">D</span> рух</div>
-            <div><span class="k y">J</span>A · <span class="k y">K</span>B · <span class="k y">L</span>C · <span class="k y">U</span>Start</div>
+            <div><span class="k y">J</span>Пас · <span class="k y">K</span>Удар · <span class="k y">L</span>Пас на ході · <span class="k y">␣</span>Start</div>
           </div>
-          <div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--border);color:var(--muted);font-size:9px;line-height:1.5">
-            ⚠ Якщо кнопки не реагують: клікни на гру або тисни «↺ Фокус».<br>
-            ⏳ Перший запуск ~15 сек (завантаження ROM + ядра).<br>
-            ▶ На титульному екрані FIFA 97 тисни Enter (Start) щоб потрапити в меню.
+          <div style="margin-top:6px;padding-top:5px;border-top:1px dashed var(--border);color:var(--muted);font-size:9px;line-height:1.45">
+            ⚠ Не реагує? Клікни на гру або «↺ Фокус».<br>
+            ⏳ Перший запуск ~15 сек.<br>
+            ▶ Тисни <span class="k">␣</span> (Space) на титульному екрані FIFA 97.
           </div>
         </div>
       </div>
@@ -567,37 +567,41 @@ function launchEmulator() {
   // don't override our EJS_defaultControls. Without this, keys may silently stop working.
   window.EJS_disableLocalStorage = true;
 
-  // Explicit keyboard mapping for P1 (arrows + ZXC + Enter) and P2 (WASD + JKL + U)
-  // Button IDs for Sega MD core: 0=B, 2=Select/Mode, 3=Start,
-  // 4-7=DPAD UDLR, 8=A, 9=C, 10=X, 11=Y, 12=Z
+  // Classic WASD layout for P1 (host/solo) — verified button IDs from EmulatorJS segaMD virtual gamepad config:
+  //   A button = ID 1, B button = ID 0, C button = ID 8, X=10, Y=9, Z=11, Mode=2, Start=3
+  //   D-pad: Up=4, Down=5, Left=6, Right=7
+  // FIFA 97 layout: A=Pass/Switch-player, B=Shoot/Slide-tackle, C=Through-ball/Goalkeeper
   // NOTE: All 4 player slots (0-3) must exist (even if empty) or setupKeys() crashes.
   window.EJS_defaultControls = {
     0: {
-      0: {value: 'x',     value2: 'BUTTON_2'},         // B
-      2: {value: 'v',     value2: 'SELECT'},            // Mode
-      3: {value: 'enter', value2: 'START'},             // Start
-      4: {value: 'up arrow',    value2: 'DPAD_UP'},
-      5: {value: 'down arrow',  value2: 'DPAD_DOWN'},
-      6: {value: 'left arrow',  value2: 'DPAD_LEFT'},
-      7: {value: 'right arrow', value2: 'DPAD_RIGHT'},
-      8: {value: 'z',     value2: 'BUTTON_1'},          // A
-      9: {value: 'a',     value2: 'BUTTON_3'},          // C
-      10:{value: 'q',     value2: 'LEFT_TOP_SHOULDER'}, // X
-      11:{value: 'e',     value2: 'RIGHT_TOP_SHOULDER'},// Y
-      12:{value: 'tab',   value2: 'LEFT_BOTTOM_SHOULDER'}, // Z
+      // P1 = WASD + JKL (classic PC FIFA feel)
+      0: {value: 'k',     value2: 'B'},                 // B button = K  (Удар / Підкат)
+      1: {value: 'j',     value2: 'A'},                 // A button = J  (Пас / Перемикання)
+      2: {value: 'v',     value2: 'MODE'},              // Mode = V
+      3: {value: 'space', value2: 'START'},             // Start = Space
+      4: {value: 'w',     value2: 'UP'},                // D-pad Up = W
+      5: {value: 's',     value2: 'DOWN'},              // D-pad Down = S
+      6: {value: 'a',     value2: 'LEFT'},              // D-pad Left = A
+      7: {value: 'd',     value2: 'RIGHT'},             // D-pad Right = D
+      8: {value: 'l',     value2: 'C'},                 // C button = L  (Пас на ході / Голкіпер)
+      9: {value: 'e',     value2: 'Y'},                 // Y button = E (6-button)
+      10:{value: 'q',     value2: 'X'},                 // X button = Q (6-button)
+      11:{value: 'r',     value2: 'Z'},                 // Z button = R (6-button)
     },
     1: {
-      0: {value: 'k',     value2: 'BUTTON_2'},          // B (P2)
-      2: {value: 'period',value2: 'SELECT'},            // Mode
-      3: {value: 'u',     value2: 'START'},             // Start
-      4: {value: 'w',     value2: 'DPAD_UP'},
-      5: {value: 's',     value2: 'DPAD_DOWN'},
-      6: {value: 'a',     value2: 'DPAD_LEFT'},
-      7: {value: 'd',     value2: 'DPAD_RIGHT'},
-      8: {value: 'j',     value2: 'BUTTON_1'},          // A
-      9: {value: 'l',     value2: 'BUTTON_3'},          // C
-      10:{value: 'i',     value2: 'LEFT_TOP_SHOULDER'}, // X
-      11:{value: 'o',     value2: 'RIGHT_TOP_SHOULDER'},// Y
+      // P2 (local 2P / fallback) = Arrows + Z/X/C
+      0: {value: 'x',     value2: 'B'},                 // B button = X
+      1: {value: 'z',     value2: 'A'},                 // A button = Z
+      2: {value: 'period',value2: 'MODE'},              // Mode = .
+      3: {value: 'enter', value2: 'START'},             // Start = Enter
+      4: {value: 'up arrow',    value2: 'UP'},
+      5: {value: 'down arrow',  value2: 'DOWN'},
+      6: {value: 'left arrow',  value2: 'LEFT'},
+      7: {value: 'right arrow', value2: 'RIGHT'},
+      8: {value: 'c',     value2: 'C'},                 // C button = C
+      9: {value: 'o',     value2: 'Y'},
+      10:{value: 'i',     value2: 'X'},
+      11:{value: 'p',     value2: 'Z'},
     },
     2: {},
     3: {}
@@ -906,14 +910,21 @@ async function handleRemoteIce(candidate) {
 }
 
 /* ---------- INPUT FORWARDING (client → host) ---------- */
-// Client presses WASD/JKL/U → send symbolic action to host
+// Client presses WASD+JKL+Space → send symbolic action to host
+// (Same layout as P1 since client is on a different computer — no conflict)
 const P2_KEY_MAP = {
   'KeyW':'up','KeyA':'left','KeyS':'down','KeyD':'right',
-  'KeyJ':'a','KeyK':'b','KeyL':'c','KeyU':'start'
+  'KeyJ':'a','KeyK':'b','KeyL':'c','Space':'start'
 };
+function isTypingInField() {
+  const t = document.activeElement;
+  const tag = t && t.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable);
+}
 document.addEventListener('keydown', (e) => {
   if (state.isHost !== false) return;
   if (!state.conn || !state.conn.open) return;
+  if (isTypingInField()) return;  // don't capture when typing in chat/nick
   const sym = P2_KEY_MAP[e.code];
   if (sym) {
     e.preventDefault();
@@ -923,6 +934,7 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => {
   if (state.isHost !== false) return;
   if (!state.conn || !state.conn.open) return;
+  if (isTypingInField()) return;
   const sym = P2_KEY_MAP[e.code];
   if (sym) {
     e.preventDefault();
@@ -931,16 +943,15 @@ document.addEventListener('keyup', (e) => {
 });
 
 // Host: forward P2 input directly to emulator core via gameManager.simulateInput
-// (synthetic KeyboardEvent doesn't carry keyCode, so we bypass the keyboard layer)
-// Button IDs (Sega MD / Genesis Plus GX): 0=B, 2=Mode, 3=Start, 4=Up, 5=Down, 6=Left, 7=Right, 8=A, 9=C
+// Verified Sega MD button IDs: 0=B, 1=A, 2=Mode, 3=Start, 4=Up, 5=Down, 6=Left, 7=Right, 8=C, 9=Y, 10=X, 11=Z
 const P2_BUTTON_MAP = {
   'up':    [1, 4],  // P2, DPAD_UP
   'down':  [1, 5],  // P2, DPAD_DOWN
   'left':  [1, 6],  // P2, DPAD_LEFT
   'right': [1, 7],  // P2, DPAD_RIGHT
-  'a':     [1, 8],  // P2, A
-  'b':     [1, 0],  // P2, B (button 0)
-  'c':     [1, 9],  // P2, C
+  'a':     [1, 1],  // P2, A button (Pass / Switch player)
+  'b':     [1, 0],  // P2, B button (Shoot / Slide tackle)
+  'c':     [1, 8],  // P2, C button (Through ball / Goalkeeper)
   'start': [1, 3]   // P2, Start
 };
 function simulateKey(sym, down) {
